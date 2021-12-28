@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option go_package = "github.com/robolaunch/robolaunch/services";
+
+package auth;
+
+service Launch {
+  rpc ListLaunch (Empty) returns (stream LaunchList) {}
+  rpc CreateLaunch (CreateRequest) returns (LaunchState) {}
+  rpc OperateLaunch (OperateRequest) returns (LaunchState) {}
+}
+
+message Empty {}
+
+message CreateRequest {
+  string username = 1;
+  string name = 2;
+  string namespace = 3;
+  string launch_type = 4;
+  string operation = 5; // CREATE
+}
+
+message OperateRequest {
+  string workflow_id = 1;
+  string run_id = 2;
+  string operation = 3; // DELETE, UPDATE, START, STOP
+}
+
+message LaunchState {
+    string username = 1;
+    string name = 2;
+    string namespace = 3;
+    string launch_type = 4;
+    string workload_status = 5;
+    int32 theia_port = 6;
+    int32 webrtc_port = 7;
+    string node_ip = 8;
+}
+
+message LaunchList {
+  string username = 1;
+  string name = 2;
+  string namespace = 3;
+  string launch_type = 4;
+  string workload_status = 5;
+}
