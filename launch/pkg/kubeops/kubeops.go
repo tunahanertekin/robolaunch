@@ -2,8 +2,11 @@ package kubeops
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 
 	deploy "k8s.io/api/apps/v1"
 	v1ns "k8s.io/api/core/v1"
@@ -16,7 +19,7 @@ import (
 
 //Internal functions
 //Same cluster configuration setted
-// const APIServer = "https://kubernetes.default.svc.cluster.local:443"
+const APIServer = "https://kubernetes.default.svc.cluster.local:443"
 
 //TODO: Set Configurable API Server adress with config-map or env-variable default one should be "https://kubernetes.default.svc.cluster.local:443"
 
@@ -226,6 +229,51 @@ func ScaleDeployment(name string, namespace string, replicas int32, token string
 		return err
 	}
 	return nil
+}
+
+func GetUnallocatedPort(token string) (int32, error) {
+	client, err := GetKubeClient(token)
+	if err != nil {
+		return 0, err
+	}
+
+	services, err := client.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return 0, err
+	}
+
+	var allocatedPorts []int32
+
+	for _, service := range services.Items {
+		for _, port := range service.Spec.Ports {
+			if port.NodePort != 0 {
+				allocatedPorts = append(allocatedPorts, port.NodePort)
+			}
+		}
+	}
+
+	min := 30000
+	max := 32000
+
+	for i := 0; i < 100; i++ {
+		source := rand.NewSource(time.Now().UnixMilli())
+		randGen := rand.New(source)
+		randomPort := randGen.Intn(max-min) + min
+		if !contains(allocatedPorts, randomPort) {
+			return int32(randomPort), nil
+		}
+	}
+
+	return 0, errors.New("ports in cluster are allocated, try again")
+}
+
+func contains(s []int32, num int) bool {
+	for _, v := range s {
+		if int(v) == num {
+			return true
+		}
+	}
+	return false
 }
 
 //TODO: Create edit deployment method to scale up & scale down operations.
