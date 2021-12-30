@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 )
 
 type Chart struct {
@@ -18,8 +19,11 @@ type Chart struct {
 	Digest      string   `json:"digest"`
 }
 
-const ChartMuseumHost = "HOST"
+var ChartMuseumHost = os.Getenv("CHARTMUSEUM_HOST")
 
+/*
+ * Returns all charts with all versions
+ */
 func GetLaunches() (map[string][]Chart, error) {
 
 	resp, err := http.Get(ChartMuseumHost + "/api/charts")
@@ -41,6 +45,9 @@ func GetLaunches() (map[string][]Chart, error) {
 	return launches, nil
 }
 
+/*
+ * Returns a chart with all versions
+ */
 func GetLaunch(name string) ([]Chart, error) {
 
 	resp, err := http.Get(ChartMuseumHost + "/api/charts/" + name)
@@ -57,6 +64,30 @@ func GetLaunch(name string) ([]Chart, error) {
 	err = json.Unmarshal(body, &launch)
 	if err != nil {
 		return nil, err
+	}
+
+	return launch, nil
+}
+
+/*
+ * Returns a chart with all versions
+ */
+func GetLaunchWithVersion(name string, version string) (Chart, error) {
+
+	resp, err := http.Get(ChartMuseumHost + "/api/charts/" + name + "/" + version)
+	if err != nil {
+		return Chart{}, err
+	}
+	var launch Chart
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return Chart{}, err
+	}
+
+	err = json.Unmarshal(body, &launch)
+	if err != nil {
+		return Chart{}, err
 	}
 
 	return launch, nil
