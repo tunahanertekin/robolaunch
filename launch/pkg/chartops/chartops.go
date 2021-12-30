@@ -1,4 +1,4 @@
-package main
+package chartops
 
 import (
 	"encoding/json"
