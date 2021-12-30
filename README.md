@@ -1,5 +1,7 @@
 # robolaunch :rocket:
 
+![example workflow](https://github.com/robolaunch/robolaunch/actions/workflows/pipeline.yml/badge.svg)
+
 Planet Scale Robotics - Offload computation-heavy robotic operations to GPU powered world's first cloud-native robotics platform.
 
 [robolaunch](https://www.robolaunch.io) is a cloud based robotics simulation and development platform which supports variety of simulation environments, ROS/ROS2 and multiple software languages with an opportunity to run large scale of simulations in parallel.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -16,8 +17,7 @@ import (
 func (s *server) CreateLaunch(ctx context.Context, in *launchPb.CreateRequest) (*launchPb.LaunchState, error) {
 	//Getting id token from grpc metadata
 	headers, _ := metadata.FromIncomingContext(ctx)
-
-	idToken := headers["token-jwt"][0]
+	idToken := headers["authorization"][0]
 	searchAttributes := map[string]interface{}{
 		"DeploymentName":      in.Name,
 		"DeploymentNamespace": in.Namespace,
@@ -30,6 +30,8 @@ func (s *server) CreateLaunch(ctx context.Context, in *launchPb.CreateRequest) (
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(idToken)
+
 	options := client.StartWorkflowOptions{
 		ID:               uuid.New().String(),
 		TaskQueue:        launchflow.LaunchQueue,
@@ -75,7 +77,7 @@ func (s *server) OperateLaunch(ctx context.Context, in *launchPb.OperateRequest)
 	// //Getting id token from grpc metadata
 	headers, _ := metadata.FromIncomingContext(ctx)
 
-	idToken := headers["token-jwt"][0]
+	idToken := headers["authorization"][0]
 	c, err := client.NewClient(client.Options{
 		HostPort: os.Getenv("TEMPORAL_SERVER_IP"),
 	})

@@ -1,4 +1,4 @@
-name: Go
+name: robolaunch
 
 on:
   push:
@@ -22,11 +22,11 @@ jobs:
           context: .
           file: ./Dockerfiles/Dockerfile-launch-server
           push: true
-          tags: robolaunchio/launch-server:${{ github.run_number }}
+          tags: robolaunchio/launch-server:v${{ github.run_number }}
       - name: Build Launch Worker
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfiles/Dockerfile-worker
           push: true
-          tags: robolaunchio/launch-worker:${{ github.run_number }}
+          tags: robolaunchio/launch-worker:v${{ github.run_number }}

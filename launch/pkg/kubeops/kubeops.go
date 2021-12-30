@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
-
 
 	deploy "k8s.io/api/apps/v1"
 	v1ns "k8s.io/api/core/v1"
@@ -21,19 +21,22 @@ import (
 //Internal functions
 //Same cluster configuration setted
 
-// const APIServer = "https://kubernetes.default.svc.cluster.local:443"
-
-const APIServer = "https://kubernetes.default.svc.cluster.local:443"
+var APIServer = "https://kubernetes.default.svc.cluster.local:443"
 
 //TODO: Set Configurable API Server adress with config-map or env-variable default one should be "https://kubernetes.default.svc.cluster.local:443"
 
 func GetKubeClient(token string) (*kubernetes.Clientset, error) {
 	// TODO: Set Configurable CA file Default one should be service account path!
 	tlsClientConfig := rest.TLSClientConfig{}
-	// tlsClientConfig.CAFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-	//TEST CRT
-	tlsClientConfig.CAFile = "/root/go/src/github.com/robolaunch/robolaunch/launch/pkg/kubeops/ca.crt"
-
+	tlsClientConfig.CAFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	optionalCA := os.Getenv("CA_PATH")
+	optionalAPI := os.Getenv("KUBE_HOST")
+	if optionalCA != "" {
+		tlsClientConfig.CAFile = optionalCA
+	}
+	if optionalAPI != "" {
+		APIServer = optionalAPI
+	}
 	config := &rest.Config{
 		Host:            APIServer,
 		BearerToken:     token,
@@ -235,7 +238,6 @@ func ScaleDeployment(name string, namespace string, replicas int32, token string
 	return nil
 }
 
-
 func GetUnallocatedPort(token string) (int32, error) {
 	client, err := GetKubeClient(token)
 	if err != nil {
@@ -280,6 +282,5 @@ func contains(s []int32, num int) bool {
 	}
 	return false
 }
-
 
 //TODO: Create edit deployment method to scale up & scale down operations.
