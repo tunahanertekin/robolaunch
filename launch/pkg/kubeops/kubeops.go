@@ -35,7 +35,7 @@ func GetKubeClient(token string) (*kubernetes.Clientset, error) {
 		tlsClientConfig.CAFile = optionalCA
 	}
 	if optionalAPI != "" {
-		APIServer = optionalCA
+		APIServer = optionalAPI
 	}
 	config := &rest.Config{
 		Host:            APIServer,

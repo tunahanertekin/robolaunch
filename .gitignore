@@ -14,6 +14,7 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 *.crt
+test-env.sh
 /launch/clients/
 # Dependency directories (remove the comment below to include it)
 # vendor/
