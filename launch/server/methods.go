@@ -17,7 +17,7 @@ func (s *server) CreateLaunch(ctx context.Context, in *launchPb.CreateRequest) (
 	//Getting id token from grpc metadata
 	headers, _ := metadata.FromIncomingContext(ctx)
 
-	idToken := headers["token-jwt"][0]
+	idToken := headers["Authorization"][0]
 	searchAttributes := map[string]interface{}{
 		"DeploymentName":      in.Name,
 		"DeploymentNamespace": in.Namespace,
@@ -75,7 +75,7 @@ func (s *server) OperateLaunch(ctx context.Context, in *launchPb.OperateRequest)
 	// //Getting id token from grpc metadata
 	headers, _ := metadata.FromIncomingContext(ctx)
 
-	idToken := headers["token-jwt"][0]
+	idToken := headers["Authorization"][0]
 	c, err := client.NewClient(client.Options{
 		HostPort: os.Getenv("TEMPORAL_SERVER_IP"),
 	})
