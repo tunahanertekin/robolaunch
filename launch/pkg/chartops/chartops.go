@@ -40,3 +40,24 @@ func GetLaunches() (map[string][]Chart, error) {
 
 	return launches, nil
 }
+
+func GetLaunch(name string) ([]Chart, error) {
+
+	resp, err := http.Get(ChartMuseumHost + "/api/charts/" + name)
+	if err != nil {
+		return nil, err
+	}
+	var launch []Chart
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(body, &launch)
+	if err != nil {
+		return nil, err
+	}
+
+	return launch, nil
+}
