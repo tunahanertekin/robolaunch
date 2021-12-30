@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-
 	deploy "k8s.io/api/apps/v1"
 	v1ns "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -235,7 +234,6 @@ func ScaleDeployment(name string, namespace string, replicas int32, token string
 	return nil
 }
 
-
 func GetUnallocatedPort(token string) (int32, error) {
 	client, err := GetKubeClient(token)
 	if err != nil {
@@ -280,6 +278,5 @@ func contains(s []int32, num int) bool {
 	}
 	return false
 }
-
 
 //TODO: Create edit deployment method to scale up & scale down operations.
