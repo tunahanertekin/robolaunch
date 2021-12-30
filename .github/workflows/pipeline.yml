@@ -1,0 +1,31 @@
+name: Go
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login Docker Registery
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build Feedback Service
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfiles/Dockerfile-launch-server
+          push: true
+          tags: robolaunchio/launch-server:${{ github.run_number }}
+      - name: Build Launch Service
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./launch/Dockerfile
+          push: true
+          tags: robolaunchio/launch-worker:${{ github.run_number }}
