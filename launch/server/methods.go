@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	launchPb "github.com/robolaunch/robolaunch/api"
@@ -72,14 +73,45 @@ func (s *server) CreateLaunch(ctx context.Context, in *launchPb.CreateRequest) (
 func (s *server) OperateLaunch(ctx context.Context, in *launchPb.OperateRequest) (*launchPb.LaunchState, error) {
 	// log.Printf("---OperateLaunch---")
 	// //Getting id token from grpc metadata
-	// headers, _ := metadata.FromIncomingContext(ctx)
+	headers, _ := metadata.FromIncomingContext(ctx)
 
-	// idToken := headers["token-jwt"][0]
+	idToken := headers["token-jwt"][0]
+	c, err := client.NewClient(client.Options{
+		HostPort: os.Getenv("TEMPORAL_SERVER_IP"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Get workflow properties
 
-	// TODO: Find given workflowId / RunID
+	// r, err := c.ListWorkflow(context.Background(), &workflowservice.ListWorkflowExecutionsRequest{
+	// 	Query: `DeploymentNamespace="testplace" and DeploymentName="bestpiece"`,
+	// })
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// workflowId := r.Executions[0].Execution.GetWorkflowId()
+	// runId := r.Executions[0].Execution.GetRunId()
+	launchDetail, err := c.DescribeWorkflowExecution(context.Background(), in.GetWorkflowId(), in.GetRunId())
+	if err != nil {
+		panic(err)
+	}
+	name := strings.Trim(string(launchDetail.GetWorkflowExecutionInfo().SearchAttributes.IndexedFields["DeploymentName"].Data), `\"`)
+	namespace := strings.Trim(string(launchDetail.GetWorkflowExecutionInfo().SearchAttributes.IndexedFields["DeploymentNamespace"].Data), `\"`)
+
 	// From workflow list examine Advanced Query Api
 	// TODO: Send Start & Stop signal according to incoming request
-
+	err = c.SignalWorkflow(context.Background(), in.WorkflowId, in.RunId, "CHANGE_LAUNCH", launchflow.LaunchRequest{
+		Username:   namespace,
+		Name:       name,
+		LaunchType: "",
+		Namespace:  namespace,
+		IDToken:    idToken,
+		Operation:  in.Operation,
+	})
+	if err != nil {
+		return nil, err
+	}
 	// //
 
 	return &launchPb.LaunchState{

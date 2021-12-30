@@ -17,6 +17,8 @@ func LaunchWorkflow(ctx workflow.Context, req LaunchRequest) error {
 		WebRpcPort:     0,
 		NodeIp:         "",
 	}
+	// Search attribute to find workflows
+
 	options := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: time.Minute,
 	}
@@ -56,7 +58,7 @@ func LaunchWorkflow(ctx workflow.Context, req LaunchRequest) error {
 			}
 		}
 		if signalVal.Operation == "START" {
-			err = workflow.ExecuteActivity(ctx, ScaleOut, signalVal).Get(ctx, &launchState.WorkloadStatus)
+			err = workflow.ExecuteActivity(ctx, ScaleUp, signalVal).Get(ctx, &launchState.WorkloadStatus)
 			if err != nil {
 				launchState.WorkloadStatus = "FAILED"
 				panic(err)
