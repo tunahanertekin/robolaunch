@@ -32,7 +32,7 @@ func NewLaunchClient(cc grpc.ClientConnInterface) LaunchClient {
 }
 
 func (c *launchClient) ListLaunch(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Launch_ListLaunchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Launch_ServiceDesc.Streams[0], "/auth.Launch/ListLaunch", opts...)
+	stream, err := c.cc.NewStream(ctx, &Launch_ServiceDesc.Streams[0], "/launch.Launch/ListLaunch", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (x *launchListLaunchClient) Recv() (*LaunchList, error) {
 
 func (c *launchClient) CreateLaunch(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*LaunchState, error) {
 	out := new(LaunchState)
-	err := c.cc.Invoke(ctx, "/auth.Launch/CreateLaunch", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/launch.Launch/CreateLaunch", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *launchClient) CreateLaunch(ctx context.Context, in *CreateRequest, opts
 
 func (c *launchClient) OperateLaunch(ctx context.Context, in *OperateRequest, opts ...grpc.CallOption) (*LaunchState, error) {
 	out := new(LaunchState)
-	err := c.cc.Invoke(ctx, "/auth.Launch/OperateLaunch", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/launch.Launch/OperateLaunch", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func _Launch_CreateLaunch_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.Launch/CreateLaunch",
+		FullMethod: "/launch.Launch/CreateLaunch",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LaunchServer).CreateLaunch(ctx, req.(*CreateRequest))
@@ -166,7 +166,7 @@ func _Launch_OperateLaunch_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.Launch/OperateLaunch",
+		FullMethod: "/launch.Launch/OperateLaunch",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LaunchServer).OperateLaunch(ctx, req.(*OperateRequest))
@@ -178,7 +178,7 @@ func _Launch_OperateLaunch_Handler(srv interface{}, ctx context.Context, dec fun
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Launch_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "auth.Launch",
+	ServiceName: "launch.Launch",
 	HandlerType: (*LaunchServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
