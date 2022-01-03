@@ -56,14 +56,31 @@ type ReleaseInfo struct {
 	Name string `json:"name"`
 }
 
+type RegisterAppRepositoryBody struct {
+	AppRepository RegisterAppRepositoryBodyDetails `json:"appRepository"`
+}
+
+type RegisterAppRepositoryBodyDetails struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	RepoURL     string `json:"repoURL"`
+}
+
+type RegisterAppRepositoryResponse struct {
+	AppRepository AppRepository `json:"appRepository"`
+	Code          int           `json:"code"`
+	Message       string        `json:"message"`
+}
+
 /*
- * Register App Repository -> Look For Robot -> Look For Version
+ * App Repository Information
  */
 
 func GetAppRepository(token string, cluster string, namespace string, name string) (AppRepository, error) {
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", KubeappsHost+"/api/v1/clusters/"+cluster+"/apprepositories", nil)
+	req, err := http.NewRequest("GET", KubeappsHost+"/api/v1/clusters/"+cluster+"/namespaces/"+namespace+"/apprepositories", nil)
 	if err != nil {
 		return AppRepository{}, err
 	}
@@ -90,9 +107,58 @@ func GetAppRepository(token string, cluster string, namespace string, name strin
 			return repo, nil
 		}
 	}
-	return AppRepository{}, errors.New("app repository not found")
+	return AppRepository{}, errors.New("app repository not found on this namespace, please register the app repository first")
 
 }
+
+/*
+ * App Repository will be added/registered to X namespace with this function.
+ */
+
+func RegisterAppRepository(token string, cluster string, namespace string, appRepository RegisterAppRepositoryBody) (AppRepository, error) {
+
+	client := &http.Client{}
+
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(appRepository)
+	if err != nil {
+		return AppRepository{}, err
+	}
+
+	req, err := http.NewRequest("POST", KubeappsHost+"/api/v1/clusters/"+cluster+"/namespaces/"+namespace+"/apprepositories", &buf)
+	if err != nil {
+		return AppRepository{}, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+	if err != nil {
+		return AppRepository{}, err
+	}
+
+	var registerAppRepositoryResponse RegisterAppRepositoryResponse
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return AppRepository{}, err
+	}
+
+	err = json.Unmarshal(body, &registerAppRepositoryResponse)
+	if err != nil {
+		return AppRepository{}, err
+	}
+
+	if registerAppRepositoryResponse.Code != 0 {
+		return AppRepository{}, errors.New(registerAppRepositoryResponse.Message)
+	}
+
+	return registerAppRepositoryResponse.AppRepository, nil
+
+}
+
+/*
+ * When a launch is updated (on ChartMuseum), it'll be updated on Kubeapps with this function
+ */
 
 func RefreshAppRepository(token string, cluster string, namespace string, name string) (AppRepository, error) {
 
@@ -122,6 +188,10 @@ func RefreshAppRepository(token string, cluster string, namespace string, name s
 	return appRepository.AppRepo, nil
 
 }
+
+/*
+ * Release (Launch Instance) creation. Send the values as an empty string to use default configuration.
+ */
 
 func CreateRelease(token string, cluster string, namespace string, release CreateReleaseBody) (CreateReleaseResponse, error) {
 
