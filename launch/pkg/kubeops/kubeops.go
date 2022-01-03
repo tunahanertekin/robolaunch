@@ -11,6 +11,7 @@ import (
 
 	deploy "k8s.io/api/apps/v1"
 	v1ns "k8s.io/api/core/v1"
+	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -24,6 +25,41 @@ import (
 var APIServer = "https://kubernetes.default.svc.cluster.local:443"
 
 //TODO: Set Configurable API Server adress with config-map or env-variable default one should be "https://kubernetes.default.svc.cluster.local:443"
+
+func GetAdminKubeClient() (*kubernetes.Clientset, error) {
+	// TODO: Set Configurable CA file Default one should be service account path!
+	tlsClientConfig := rest.TLSClientConfig{}
+	optionalCA := os.Getenv("CA_PATH")
+	optionalToken := os.Getenv("TOKEN_PATH")
+	optionalAPI := os.Getenv("KUBE_HOST")
+	fmt.Println(optionalToken)
+	tlsClientConfig.CAFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	var config *rest.Config
+	var err error
+	if optionalCA != "" && optionalToken != "" && optionalAPI != "" {
+		token, err := os.ReadFile(optionalToken)
+		if err != nil {
+			return nil, err
+		}
+		tlsClientConfig.CAFile = optionalCA
+		config = &rest.Config{
+			Host:            optionalAPI,
+			BearerToken:     string(token),
+			TLSClientConfig: tlsClientConfig,
+		}
+	} else {
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return client, err
+}
 
 func GetKubeClient(token string) (*kubernetes.Clientset, error) {
 	// TODO: Set Configurable CA file Default one should be service account path!
@@ -284,3 +320,101 @@ func contains(s []int32, num int) bool {
 }
 
 //TODO: Create edit deployment method to scale up & scale down operations.
+
+//TODO: Implement namespace check function
+func CheckNamespace(namespace string) error {
+	client, err := GetAdminKubeClient()
+	if err != nil {
+		return err
+	}
+	res, err := client.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if res.Name != namespace {
+		return errors.New("namespace not found")
+	}
+	return nil
+}
+
+//TODO: Implement namespace create function
+func CreateNamespace(namespace string, args ...metav1.CreateOptions) (*v1ns.Namespace, error) {
+	//namespace template
+	ns := v1ns.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}
+	// Default create option
+	option := metav1.CreateOptions{}
+	if len(args) == 1 {
+		option = args[0]
+	}
+	client, err := GetAdminKubeClient()
+	if err != nil {
+		return nil, err
+	}
+
+	nsObj, err := client.CoreV1().Namespaces().Create(context.Background(), &ns, option)
+	if err != nil {
+		return nil, err
+	}
+	return nsObj, nil
+}
+
+// The following function can create role & role binding
+func CreateRole(namespace string, args ...metav1.CreateOptions) (*v1.Role, *v1.RoleBinding, error) {
+	client, err := GetAdminKubeClient()
+	if err != nil {
+		fmt.Printf("Client connection failed: %v", err)
+		return nil, nil, err
+	}
+	option := metav1.CreateOptions{}
+	if len(args) == 1 {
+		option = args[0]
+	}
+	role := &v1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      namespace + "_role",
+			Namespace: namespace,
+		},
+		Rules: []v1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods", "services", "deployments"},
+				Verbs:     []string{"get", "list", "create"},
+			},
+		},
+	}
+
+	rbind := &v1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      namespace + "_role",
+			Namespace: namespace,
+		},
+		Subjects: []v1.Subject{
+			{
+				Kind:     "Group",
+				Name:     namespace + "_role",
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+		},
+		RoleRef: v1.RoleRef{
+			Kind:     "Role",
+			Name:     namespace + "_role",
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+	// Create user role
+	clusterRole, err := client.RbacV1().Roles(namespace).Create(context.TODO(), role, option)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	//Create user role binding
+	clusterRoleBind, err := client.RbacV1().RoleBindings(namespace).Create(context.TODO(), rbind, option)
+	if err != nil {
+		return nil, nil, err
+	}
+	return clusterRole, clusterRoleBind, nil
+}

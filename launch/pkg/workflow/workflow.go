@@ -1,6 +1,7 @@
 package launchflow
 
 import (
+	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -32,6 +33,12 @@ func LaunchWorkflow(ctx workflow.Context, req LaunchRequest) error {
 		return err
 	}
 	// Execute CreateDeployment & Create Service Section
+	var namespaceStatus string
+	err = workflow.ExecuteActivity(ctx, CreateUserSpace, req).Get(ctx, &namespaceStatus)
+	if err != nil {
+		return err
+	}
+	fmt.Println(namespaceStatus)
 
 	err = workflow.ExecuteActivity(ctx, CreateLaunch, req).Get(ctx, &launchState)
 	if err != nil {
@@ -47,21 +54,22 @@ func LaunchWorkflow(ctx workflow.Context, req LaunchRequest) error {
 		if signalVal.Operation == "DELETE" {
 			err = workflow.ExecuteActivity(ctx, DeleteLaunch, signalVal).Get(ctx, &launchState)
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
 			}
 		}
 		if signalVal.Operation == "STOP" {
 			err = workflow.ExecuteActivity(ctx, ScaleOut, signalVal).Get(ctx, &launchState.WorkloadStatus)
 			if err != nil {
 				launchState.WorkloadStatus = "FAILED"
-				panic(err)
+				fmt.Println(err)
 			}
 		}
 		if signalVal.Operation == "START" {
 			err = workflow.ExecuteActivity(ctx, ScaleUp, signalVal).Get(ctx, &launchState.WorkloadStatus)
 			if err != nil {
 				launchState.WorkloadStatus = "FAILED"
-				panic(err)
+				fmt.Println(err)
+
 			}
 		}
 	})
