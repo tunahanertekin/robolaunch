@@ -7,6 +7,22 @@ import (
 func CreateLaunch(l LaunchRequest) (LaunchStatus, error) {
 
 	// Launch type not used right now!
+
+	// Check namespace first
+	err := kubeops.CheckNamespace(l.Namespace)
+	if err != nil {
+		// Create namespace
+		err := kubeops.CreateNamespace(l.Namespace)
+		if err != nil {
+			return LaunchStatus{}, err
+		}
+		//Create role for user
+		err = kubeops.CreateRole(l.Namespace)
+		if err != nil {
+			return LaunchStatus{}, err
+		}
+	}
+
 	udpPort, theiaPort, err := kubeops.CreateDeploymentService(l.Name, l.Namespace, l.IDToken)
 	if err != nil {
 		return LaunchStatus{}, err

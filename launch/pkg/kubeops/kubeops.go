@@ -322,19 +322,19 @@ func contains(s []int32, num int) bool {
 //TODO: Create edit deployment method to scale up & scale down operations.
 
 //TODO: Implement namespace check function
-func CheckNamespace(namespace string) (bool, error) {
+func CheckNamespace(namespace string) error {
 	client, err := GetAdminKubeClient()
 	if err != nil {
-		return false, err
+		return err
 	}
 	res, err := client.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
 	if err != nil {
-		return false, err
+		return err
 	}
 	if res.Name != namespace {
-		return false, errors.New("namespace not found")
+		return errors.New("namespace not found")
 	}
-	return true, nil
+	return nil
 }
 
 //TODO: Implement namespace create function
