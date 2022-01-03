@@ -234,3 +234,30 @@ func CreateRelease(token string, cluster string, namespace string, release Creat
 	return createReleaseResp, nil
 
 }
+
+func DeleteRelease(token string, cluster string, namespace string, name string) (bool, error) {
+
+	client := &http.Client{}
+	req, err := http.NewRequest("DELETE", KubeappsHost+"/api/kubeops/v1/clusters/"+cluster+"/namespaces/"+namespace+"/releases/"+name, nil)
+	if err != nil {
+		return false, err
+	}
+	req.Header.Add("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return false, err
+	}
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	if string(body) != "OK" {
+		return false, errors.New(string(body))
+	}
+
+	return true, nil
+}
