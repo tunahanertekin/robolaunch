@@ -1,4 +1,4 @@
-name: robolaunch
+name: robolaunch-pr
 
 on:
   pull_request:
