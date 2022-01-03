@@ -1,6 +1,7 @@
 package launchflow
 
 import (
+	"github.com/robolaunch/robolaunch/launch/pkg/account"
 	"github.com/robolaunch/robolaunch/launch/pkg/kubeops"
 )
 
@@ -12,15 +13,21 @@ func CreateLaunch(l LaunchRequest) (LaunchStatus, error) {
 	err := kubeops.CheckNamespace(l.Namespace)
 	if err != nil {
 		// Create namespace
-		err := kubeops.CreateNamespace(l.Namespace)
+		_, err := kubeops.CreateNamespace(l.Namespace)
 		if err != nil {
 			return LaunchStatus{}, err
 		}
 		//Create role for user
-		err = kubeops.CreateRole(l.Namespace)
+		_, _, err = kubeops.CreateRole(l.Namespace)
 		if err != nil {
 			return LaunchStatus{}, err
 		}
+
+		//Create keycloak role
+		_, err = account.CreateGroup(l.Namespace)
+
+		//Bind the role
+		err = account.BindGroup(l.Username, l.Namespace)
 	}
 
 	udpPort, theiaPort, err := kubeops.CreateDeploymentService(l.Name, l.Namespace, l.IDToken)
