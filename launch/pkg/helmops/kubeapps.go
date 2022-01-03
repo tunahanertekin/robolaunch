@@ -1,6 +1,7 @@
 package kubeapps
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -34,6 +35,25 @@ type AppRepositorySpec struct {
 type AppRepositoryMetadata struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
+}
+
+type CreateReleaseBody struct {
+	AppRepositoryResourceName      string `json:"appRepositoryResourceName"`
+	AppRepositoryResourceNamespace string `json:"appRepositoryResourceNamespace"`
+	ChartName                      string `json:"chartName"`
+	ReleaseName                    string `json:"releaseName"`
+	Version                        string `json:"version"`
+	Values                         string `json:"values"`
+}
+
+type CreateReleaseResponse struct {
+	Data    ReleaseInfo `json:"data"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+}
+
+type ReleaseInfo struct {
+	Name string `json:"name"`
 }
 
 /*
@@ -100,5 +120,47 @@ func RefreshAppRepository(token string, cluster string, namespace string, name s
 	}
 
 	return appRepository.AppRepo, nil
+
+}
+
+func CreateRelease(token string, cluster string, namespace string, release CreateReleaseBody) (CreateReleaseResponse, error) {
+
+	client := &http.Client{}
+
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(release)
+	if err != nil {
+		return CreateReleaseResponse{}, err
+	}
+
+	req, err := http.NewRequest("POST", KubeappsHost+"/api/kubeops/v1/clusters/"+cluster+"/namespaces/"+namespace+"/releases", &buf)
+	if err != nil {
+		return CreateReleaseResponse{}, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+	if err != nil {
+		return CreateReleaseResponse{}, err
+	}
+
+	var createReleaseResp CreateReleaseResponse
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return CreateReleaseResponse{}, err
+	}
+
+	err = json.Unmarshal(body, &createReleaseResp)
+	if err != nil {
+		return CreateReleaseResponse{}, err
+	}
+
+	if createReleaseResp.Code != 0 {
+		// returns 401 if cannot be created
+		return CreateReleaseResponse{}, errors.New(createReleaseResp.Message)
+	}
+
+	return createReleaseResp, nil
 
 }
