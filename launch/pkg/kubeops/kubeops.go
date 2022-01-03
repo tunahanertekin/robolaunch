@@ -338,7 +338,7 @@ func CheckNamespace(namespace string) error {
 }
 
 //TODO: Implement namespace create function
-func CreateNamespace(namespace string, args ...metav1.CreateOptions) error {
+func CreateNamespace(namespace string, args ...metav1.CreateOptions) (*v1ns.Namespace, error) {
 	//namespace template
 	ns := v1ns.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -352,21 +352,22 @@ func CreateNamespace(namespace string, args ...metav1.CreateOptions) error {
 	}
 	client, err := GetAdminKubeClient()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = client.CoreV1().Namespaces().Create(context.Background(), &ns, option)
+	nsObj, err := client.CoreV1().Namespaces().Create(context.Background(), &ns, option)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return nsObj, nil
 }
 
 // The following function can create role & role binding
-func CreateRole(namespace string, args ...metav1.CreateOptions) error {
+func CreateRole(namespace string, args ...metav1.CreateOptions) (*v1.Role, *v1.RoleBinding, error) {
 	client, err := GetAdminKubeClient()
 	if err != nil {
 		fmt.Printf("Client connection failed: %v", err)
+		return nil, nil, err
 	}
 	option := metav1.CreateOptions{}
 	if len(args) == 1 {
@@ -405,15 +406,15 @@ func CreateRole(namespace string, args ...metav1.CreateOptions) error {
 		},
 	}
 	// Create user role
-	_, err = client.RbacV1().Roles(namespace).Create(context.TODO(), role, option)
+	clusterRole, err := client.RbacV1().Roles(namespace).Create(context.TODO(), role, option)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	//Create user role binding
-	_, err = client.RbacV1().RoleBindings(namespace).Create(context.TODO(), rbind, option)
+	clusterRoleBind, err := client.RbacV1().RoleBindings(namespace).Create(context.TODO(), rbind, option)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	return nil
+	return clusterRole, clusterRoleBind, nil
 }
