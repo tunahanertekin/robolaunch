@@ -73,6 +73,17 @@ type RegisterAppRepositoryResponse struct {
 	Message       string        `json:"message"`
 }
 
+type UpdateReleaseBody struct {
+	Version string `json:"version,omitempty"`
+	Values  string `json:"values,omitempty"`
+}
+
+type UpdateReleaseResponse struct {
+	Data    ReleaseInfo `json:"data"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+}
+
 /*
  * App Repository Information
  */
@@ -234,6 +245,55 @@ func CreateRelease(token string, cluster string, namespace string, release Creat
 	return createReleaseResp, nil
 
 }
+
+/*
+ * Release (Launch Instance) update.
+ */
+
+func UpdateRelease(token string, cluster string, namespace string, name string, release UpdateReleaseBody) (UpdateReleaseResponse, error) {
+
+	client := &http.Client{}
+
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(release)
+	if err != nil {
+		return UpdateReleaseResponse{}, err
+	}
+
+	req, err := http.NewRequest("PUT", KubeappsHost+"/api/kubeops/v1/clusters/"+cluster+"/namespaces/"+namespace+"/releases/"+name, &buf)
+	if err != nil {
+		return UpdateReleaseResponse{}, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+	if err != nil {
+		return UpdateReleaseResponse{}, err
+	}
+
+	var updateReleaseResp UpdateReleaseResponse
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return UpdateReleaseResponse{}, err
+	}
+
+	err = json.Unmarshal(body, &updateReleaseResp)
+	if err != nil {
+		return UpdateReleaseResponse{}, err
+	}
+
+	if updateReleaseResp.Code != 0 {
+		return UpdateReleaseResponse{}, errors.New(updateReleaseResp.Message)
+	}
+
+	return updateReleaseResp, nil
+
+}
+
+/*
+ * Release (Launch Instance) deletion.
+ */
 
 func DeleteRelease(token string, cluster string, namespace string, name string) (bool, error) {
 
