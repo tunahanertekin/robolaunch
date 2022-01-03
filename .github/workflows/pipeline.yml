@@ -3,8 +3,6 @@ name: robolaunch
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
   build:
@@ -22,11 +20,13 @@ jobs:
           context: .
           file: ./Dockerfiles/Dockerfile-launch-server
           push: true
-          tags: robolaunchio/launch-server:v${{ github.run_number }}
+          repository: robolaunchio/launch-server
+          tags: v${{ github.run_number }},latest
       - name: Build Launch Worker
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfiles/Dockerfile-worker
           push: true
-          tags: robolaunchio/launch-worker:v${{ github.run_number }}
+          repository: robolaunchio/launch-worker
+          tags: v${{ github.run_number }},latest

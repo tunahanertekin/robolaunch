@@ -1,0 +1,25 @@
+name: robolaunch-pr
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Launch Service
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfiles/Dockerfile-launch-server
+          push: false
+          tags: test
+      - name: Build Launch Worker
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfiles/Dockerfile-worker
+          push: false
+          tags: test
