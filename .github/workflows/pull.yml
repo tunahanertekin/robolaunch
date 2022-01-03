@@ -1,7 +1,7 @@
 name: robolaunch
 
 on:
-  push:
+  pull_request:
     branches: [main]
 
 jobs:
@@ -9,24 +9,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Login Docker Registery
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build Launch Service
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfiles/Dockerfile-launch-server
-          push: true
-          repository: robolaunchio/launch-server
-          tags: v${{ github.run_number }},latest
+          push: false
+          tags: test
       - name: Build Launch Worker
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfiles/Dockerfile-worker
-          push: true
-          repository: robolaunchio/launch-worker
-          tags: v${{ github.run_number }},latest
+          push: false
+          tags: test
