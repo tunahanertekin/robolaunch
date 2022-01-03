@@ -20,13 +20,12 @@ jobs:
           context: .
           file: ./Dockerfiles/Dockerfile-launch-server
           push: true
-          repository: robolaunchio/launch-server
-          tags: v${{ github.run_number }},latest
+          tags: robolaunchio/launch-server:v${{ github.run_number }},robolaunchio/launch-server:latest
       - name: Build Launch Worker
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfiles/Dockerfile-worker
           push: true
-          repository: robolaunchio/launch-worker
-          tags: v${{ github.run_number }},latest
+          labels: robolaunchio/launch-worker
+          tags: robolaunchio/launch-worker:v${{ github.run_number }},robolaunchio/launch-worker:latest
