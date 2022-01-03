@@ -14,6 +14,10 @@ type AppRepoResponse struct {
 	AppRepo AppRepoItems `json:"appRepository"`
 }
 
+type RefreshAppRepoResponse struct {
+	AppRepo AppRepository `json:"appRepository"`
+}
+
 type AppRepoItems struct {
 	Items []AppRepository `json:"items"`
 }
@@ -67,5 +71,34 @@ func GetAppRepository(token string, cluster string, namespace string, name strin
 		}
 	}
 	return AppRepository{}, errors.New("app repository not found")
+
+}
+
+func RefreshAppRepository(token string, cluster string, namespace string, name string) (AppRepository, error) {
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", KubeappsHost+"/api/v1/clusters/"+cluster+"/namespaces/"+namespace+"/apprepositories/"+name+"/refresh", nil)
+	if err != nil {
+		return AppRepository{}, err
+	}
+	req.Header.Add("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return AppRepository{}, err
+	}
+	var appRepository RefreshAppRepoResponse
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return AppRepository{}, err
+	}
+
+	err = json.Unmarshal(body, &appRepository)
+	if err != nil {
+		return AppRepository{}, err
+	}
+
+	return appRepository.AppRepo, nil
 
 }
