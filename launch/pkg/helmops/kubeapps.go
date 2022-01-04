@@ -1,4 +1,4 @@
-package kubeapps
+package helmops
 
 import (
 	"bytes"

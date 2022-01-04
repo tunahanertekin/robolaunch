@@ -1,7 +1,8 @@
-package chartops
+package helmops
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -17,9 +18,14 @@ type Chart struct {
 	Urls        []string `json:"urls"`
 	Created     string   `json:"created"`
 	Digest      string   `json:"digest"`
+	Message     string   `json:"error"`
 }
 
-var ChartMuseumHost = os.Getenv("CHARTMUSEUM_HOST")
+type ErrorResponse struct {
+	Message string `json:"error"`
+}
+
+var ChartMuseumHost = os.Getenv("CHARTMUSEUM_SERVER_IP")
 
 /*
  * Returns all charts with all versions
@@ -63,7 +69,12 @@ func GetLaunch(name string) ([]Chart, error) {
 
 	err = json.Unmarshal(body, &launch)
 	if err != nil {
-		return nil, err
+		var errResponse ErrorResponse
+		err = json.Unmarshal(body, &errResponse)
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New(errResponse.Message)
 	}
 
 	return launch, nil
@@ -88,6 +99,10 @@ func GetLaunchWithVersion(name string, version string) (Chart, error) {
 	err = json.Unmarshal(body, &launch)
 	if err != nil {
 		return Chart{}, err
+	}
+
+	if launch.Message != "" {
+		return Chart{}, errors.New(launch.Message)
 	}
 
 	return launch, nil
