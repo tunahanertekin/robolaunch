@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1
+
+#Build stage
+FROM golang:1.17-buster AS build
+
+WORKDIR /app
+
+COPY ./go.mod ./
+COPY ./go.sum ./
+RUN go mod download
+
+COPY ./launch/worker ./launch/worker
+COPY ./launch/pkg ./launch/pkg
+
+
+
+RUN cd launch/worker; go build -o /worker
+
+#Deployable image
+FROM gcr.io/distroless/base-debian10
+
+WORKDIR /
+
+COPY --from=build /worker /worker
+
+EXPOSE 8080
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/worker"]

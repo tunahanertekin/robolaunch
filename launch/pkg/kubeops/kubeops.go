@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 
@@ -20,19 +21,22 @@ import (
 //Internal functions
 //Same cluster configuration setted
 
-// const APIServer = "https://kubernetes.default.svc.cluster.local:443"
-
-const APIServer = "https://kubernetes.default.svc.cluster.local:443"
+var APIServer = "https://kubernetes.default.svc.cluster.local:443"
 
 //TODO: Set Configurable API Server adress with config-map or env-variable default one should be "https://kubernetes.default.svc.cluster.local:443"
 
 func GetKubeClient(token string) (*kubernetes.Clientset, error) {
 	// TODO: Set Configurable CA file Default one should be service account path!
 	tlsClientConfig := rest.TLSClientConfig{}
-	// tlsClientConfig.CAFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-	//TEST CRT
-	tlsClientConfig.CAFile = "/root/go/src/github.com/robolaunch/robolaunch/launch/pkg/kubeops/ca.crt"
-
+	tlsClientConfig.CAFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	optionalCA := os.Getenv("CA_PATH")
+	optionalAPI := os.Getenv("KUBE_HOST")
+	if optionalCA != "" {
+		tlsClientConfig.CAFile = optionalCA
+	}
+	if optionalAPI != "" {
+		APIServer = optionalAPI
+	}
 	config := &rest.Config{
 		Host:            APIServer,
 		BearerToken:     token,

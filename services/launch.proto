@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/robolaunch/robolaunch/api";
 
-package auth;
+package launch;
 
 service Launch {
   rpc ListLaunch (Empty) returns (stream LaunchList) {}
