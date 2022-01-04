@@ -53,7 +53,17 @@ type CreateReleaseResponse struct {
 }
 
 type ReleaseInfo struct {
-	Name string `json:"name"`
+	Name      string             `json:"name"`
+	Namespace string             `json:"namespace"`
+	Info      ReleaseInfoDetails `json:"info"`
+	Version   int                `json:"version"`
+}
+
+type ReleaseInfoDetails struct {
+	FirstDeployed string `json:"firstDeployed"`
+	LastDeployed  string `json:"lastDeployed"`
+	Description   string `json:"description"`
+	Status        string `json:"status"`
 }
 
 type RegisterAppRepositoryBody struct {
@@ -74,8 +84,12 @@ type RegisterAppRepositoryResponse struct {
 }
 
 type UpdateReleaseBody struct {
-	Version string `json:"version,omitempty"`
-	Values  string `json:"values,omitempty"`
+	AppRepositoryResourceName      string `json:"appRepositoryResourceName"`
+	AppRepositoryResourceNamespace string `json:"appRepositoryResourceNamespace"`
+	ChartName                      string `json:"chartName"`
+	ReleaseName                    string `json:"releaseName"`
+	Version                        string `json:"version"`
+	Values                         string `json:"values"`
 }
 
 type UpdateReleaseResponse struct {
