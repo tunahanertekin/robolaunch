@@ -13,10 +13,14 @@ var KubeappsHost = os.Getenv("KUBEAPPS_SERVER_IP")
 
 type AppRepoResponse struct {
 	AppRepo AppRepoItems `json:"appRepository"`
+	Code    int          `json:"code,omitempty"`
+	Message string       `json:"message,omitempty"`
 }
 
 type RefreshAppRepoResponse struct {
 	AppRepo AppRepository `json:"appRepository"`
+	Code    int           `json:"code"`
+	Message string        `json:"message"`
 }
 
 type AppRepoItems struct {
@@ -60,8 +64,8 @@ type ReleaseInfo struct {
 }
 
 type ReleaseInfoDetails struct {
-	FirstDeployed string `json:"firstDeployed"`
-	LastDeployed  string `json:"lastDeployed"`
+	FirstDeployed string `json:"first_deployed"`
+	LastDeployed  string `json:"last_deployed"`
 	Description   string `json:"description"`
 	Status        string `json:"status"`
 }
@@ -105,32 +109,40 @@ type UpdateReleaseResponse struct {
 func GetAppRepository(token string, cluster string, namespace string, name string) (AppRepository, error) {
 
 	client := &http.Client{}
+
 	req, err := http.NewRequest("GET", KubeappsHost+"/api/v1/clusters/"+cluster+"/namespaces/"+namespace+"/apprepositories", nil)
 	if err != nil {
 		return AppRepository{}, err
 	}
-	req.Header.Add("Authorization", "Bearer "+token)
-	resp, err := client.Do(req)
 
+	req.Header.Add("Authorization", "Bearer "+token)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return AppRepository{}, err
 	}
-	var appRepositories AppRepoResponse
+
+	var appRepositoriesResponse AppRepoResponse
 	defer resp.Body.Close()
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return AppRepository{}, err
 	}
 
-	err = json.Unmarshal(body, &appRepositories)
+	err = json.Unmarshal(body, &appRepositoriesResponse)
 	if err != nil {
 		return AppRepository{}, err
 	}
 
-	for _, repo := range appRepositories.AppRepo.Items {
+	for _, repo := range appRepositoriesResponse.AppRepo.Items {
 		if repo.Metadata.Name == name {
 			return repo, nil
 		}
+	}
+
+	if appRepositoriesResponse.Code != 0 {
+		return AppRepository{}, errors.New(appRepositoriesResponse.Message)
 	}
 	return AppRepository{}, errors.New("app repository not found on this namespace, please register the app repository first")
 
@@ -163,6 +175,7 @@ func RegisterAppRepository(token string, cluster string, namespace string, appRe
 
 	var registerAppRepositoryResponse RegisterAppRepositoryResponse
 	defer resp.Body.Close()
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return AppRepository{}, err
@@ -188,29 +201,37 @@ func RegisterAppRepository(token string, cluster string, namespace string, appRe
 func RefreshAppRepository(token string, cluster string, namespace string, name string) (AppRepository, error) {
 
 	client := &http.Client{}
+
 	req, err := http.NewRequest("POST", KubeappsHost+"/api/v1/clusters/"+cluster+"/namespaces/"+namespace+"/apprepositories/"+name+"/refresh", nil)
 	if err != nil {
 		return AppRepository{}, err
 	}
-	req.Header.Add("Authorization", "Bearer "+token)
-	resp, err := client.Do(req)
 
+	req.Header.Add("Authorization", "Bearer "+token)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return AppRepository{}, err
 	}
-	var appRepository RefreshAppRepoResponse
+
+	var appRepositoryResp RefreshAppRepoResponse
 	defer resp.Body.Close()
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return AppRepository{}, err
 	}
 
-	err = json.Unmarshal(body, &appRepository)
+	err = json.Unmarshal(body, &appRepositoryResp)
 	if err != nil {
 		return AppRepository{}, err
 	}
 
-	return appRepository.AppRepo, nil
+	if appRepositoryResp.Code != 0 {
+		return AppRepository{}, errors.New(appRepositoryResp.Message)
+	}
+
+	return appRepositoryResp.AppRepo, nil
 
 }
 
@@ -234,6 +255,7 @@ func CreateRelease(token string, cluster string, namespace string, release Creat
 	}
 
 	req.Header.Add("Authorization", "Bearer "+token)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return CreateReleaseResponse{}, err
@@ -241,6 +263,7 @@ func CreateRelease(token string, cluster string, namespace string, release Creat
 
 	var createReleaseResp CreateReleaseResponse
 	defer resp.Body.Close()
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return CreateReleaseResponse{}, err
@@ -257,7 +280,6 @@ func CreateRelease(token string, cluster string, namespace string, release Creat
 	}
 
 	return createReleaseResp, nil
-
 }
 
 /*
