@@ -41,6 +41,11 @@ type AppRepositoryMetadata struct {
 	Namespace string `json:"namespace"`
 }
 
+type DeleteAppRepositoryResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 type CreateReleaseBody struct {
 	AppRepositoryResourceName      string `json:"appRepositoryResourceName"`
 	AppRepositoryResourceNamespace string `json:"appRepositoryResourceNamespace"`
@@ -232,6 +237,47 @@ func RefreshAppRepository(token string, cluster string, namespace string, name s
 	}
 
 	return appRepositoryResp.AppRepo, nil
+
+}
+
+/*
+ * App Repository deletion. Needed for test cleanups. Returns a boolean.
+ */
+
+func DeleteAppRepository(token string, cluster string, namespace string, name string) (bool, error) {
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("DELETE", KubeappsHost+"/api/v1/clusters/"+cluster+"/namespaces/"+namespace+"/apprepositories/"+name, nil)
+	if err != nil {
+		return false, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+
+	var deleteAppRepositoryResponse DeleteAppRepositoryResponse
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	if resp.StatusCode == 200 {
+		return true, nil
+	} else {
+		err = json.Unmarshal(body, &deleteAppRepositoryResponse)
+		if err != nil {
+			return false, err
+		}
+
+		return false, errors.New(deleteAppRepositoryResponse.Message)
+	}
 
 }
 
