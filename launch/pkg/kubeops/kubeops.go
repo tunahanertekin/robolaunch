@@ -380,9 +380,9 @@ func CreateRole(namespace string, args ...metav1.CreateOptions) (*v1.Role, *v1.R
 		},
 		Rules: []v1.PolicyRule{
 			{
-				APIGroups: []string{""},
+				APIGroups: []string{"*"},
 				Resources: []string{"pods", "services", "deployments"},
-				Verbs:     []string{"get", "list", "create"},
+				Verbs:     []string{"get", "list", "create", "update"},
 			},
 		},
 	}
