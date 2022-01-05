@@ -98,3 +98,66 @@ func TestDeleteAppRepository(t *testing.T) { // also a cleanup for registering
 	assert.NotEqual(t, err2, nil)
 
 }
+
+// cluster is set
+// ns is set
+var appRepoResource string = "robot-helm-charts"
+var appRepoNamespace string = "default"
+var chartName string = "jackal"
+var releaseName string = "my-test-jackal"
+var version string = "0.1.0"
+var values string = ""
+
+func TestCreateRelease(t *testing.T) {
+	createRelease, err := CreateRelease(
+		os.Getenv("TOKEN"),
+		cluster,
+		ns,
+		CreateReleaseBody{
+			AppRepositoryResourceName:      appRepoResource,
+			AppRepositoryResourceNamespace: appRepoNamespace,
+			ChartName:                      chartName,
+			ReleaseName:                    releaseName,
+			Version:                        version,
+			Values:                         values,
+		},
+	)
+
+	assert.Equal(t, createRelease.Data.Name, releaseName)
+	assert.Equal(t, err, nil)
+}
+
+var changedVersion string = "0.1.1"
+
+// for assertion, response must include chart metadata & values
+func TestUpdateRelease(t *testing.T) {
+	_, err := UpdateRelease(
+		os.Getenv("TOKEN"),
+		cluster,
+		ns,
+		releaseName,
+		UpdateReleaseBody{
+			AppRepositoryResourceName:      appRepoResource,
+			AppRepositoryResourceNamespace: appRepoNamespace,
+			ChartName:                      chartName,
+			ReleaseName:                    releaseName,
+			Version:                        changedVersion,
+			Values:                         values,
+		},
+	)
+
+	//assert.Equal(t, updateRelease.Version, changedVersion)
+	assert.Equal(t, err, nil)
+}
+
+func TestDeleteRelease(t *testing.T) {
+	deleteRelease, err := DeleteRelease(
+		os.Getenv("TOKEN"),
+		cluster,
+		ns,
+		releaseName,
+	)
+
+	assert.True(t, deleteRelease)
+	assert.Equal(t, err, nil)
+}
